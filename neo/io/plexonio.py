@@ -167,6 +167,7 @@ class PlexonIO(BaseIO):
             elif dataBlockHeader['Type'] ==4:
                 #event
                 nb_events[chan] += 1
+                fid.seek(n1*n2*2,1)    #handle events have waveforms
             elif dataBlockHeader['Type'] == 5:
                 #continuous signal
                 fid.seek(n2*2, 1)
@@ -210,7 +211,7 @@ class PlexonIO(BaseIO):
                 time/= globalHeader['ADFrequency']
 
                 if n2 <0: break
-                if dataBlockHeader['Type'] == 1:
+                if dataBlockHeader['Type'] == 1:        #spike
                     #spike
                     unit = dataBlockHeader['Unit']
                     pos = pos_spikes[chan,unit]
@@ -221,13 +222,15 @@ class PlexonIO(BaseIO):
                         fid.seek(n1*n2*2,1)
                     pos_spikes[chan,unit] +=1
                 
-                elif dataBlockHeader['Type'] == 4:
+                elif dataBlockHeader['Type'] == 4:         #event
                     # event
                     pos = eventpositions[chan]
                     evarrays[chan][pos] = time
                     eventpositions[chan]+= 1
+                    if n1*n2 != 0:
+                        fid.seek(n1*n2*2,1)
 
-                elif dataBlockHeader['Type'] == 5:
+                elif dataBlockHeader['Type'] == 5:          #continuous
                     #signal
                     data = np.fromstring( fid.read(n2*2) , dtype = 'i2').astype('f4')
                     sigarrays[chan][sample_positions[chan] : sample_positions[chan]+data.size] = data
@@ -240,6 +243,7 @@ class PlexonIO(BaseIO):
                 times = [ ]
             else:
                 times = evarrays[chan]
+            print(times)
             ea = EventArray(times*pq.s,
                                             channel_name= eventHeaders[chan]['Name'],
                                             channel_index = chan)
@@ -433,7 +437,7 @@ class HeaderReader():
             val = list(struct.unpack(fmt , buf))
             for i, ival in enumerate(val):
                 if hasattr(ival, 'replace'):
-                    val[i] = ival.replace('\x00','')
+                     val[i] = ival.replace(b'\x00',b'')
             if len(val) == 1:
                 val = val[0]
             d[key] = val
