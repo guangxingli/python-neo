@@ -99,7 +99,7 @@ class PlexonIO(BaseIO):
         )
         seg.file_origin = os.path.basename(self.filename)
 
-        for key, val in globalHeader.iteritems():
+        for key, val in globalHeader.items():
             seg.annotate(**{key: val})
 
         if not cascade:
@@ -166,6 +166,7 @@ class PlexonIO(BaseIO):
             elif dataBlockHeader['Type'] ==4:
                 #event
                 nb_events[chan] += 1
+                fid.seek(n1*n2*2, 1)    #handle events have waveforms
             elif dataBlockHeader['Type'] == 5:
                 #continuous signal
                 fid.seek(n2*2, 1)
@@ -229,6 +230,8 @@ class PlexonIO(BaseIO):
                     evarrays[chan]['times'][pos] = time
                     evarrays[chan]['labels'][pos] = dataBlockHeader['Unit']
                     eventpositions[chan]+= 1
+                    if n1*n2 != 0:
+                        fid.seek(n1*n2*2,1)
 
                 elif dataBlockHeader['Type'] == 5:
                     #signal
@@ -304,7 +307,7 @@ class PlexonIO(BaseIO):
             )
             sptr.annotate(unit_name = dspChannelHeaders[chan]['Name'])
             sptr.annotate(channel_index = chan)
-            for key, val in dspChannelHeaders[chan].iteritems():
+            for key, val in dspChannelHeaders[chan].items():
                 sptr.annotate(**{key: val})
 
             if lazy:
@@ -448,7 +451,7 @@ class HeaderReader():
             val = list(struct.unpack(fmt , buf))
             for i, ival in enumerate(val):
                 if hasattr(ival, 'replace'):
-                    val[i] = ival.replace('\x00','')
+                     val[i] = ival.replace(b'\x00',b'')
             if len(val) == 1:
                 val = val[0]
             d[key] = val
