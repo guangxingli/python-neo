@@ -244,6 +244,7 @@ class PlexonIO(BaseIO):
         for chan, h in iteritems(eventHeaders):
             if lazy:
                 times = []
+                labels = None
             else:
 <<<<<<< HEAD
                 times = evarrays[chan]
@@ -253,16 +254,16 @@ class PlexonIO(BaseIO):
                                             channel_index = chan)
 =======
                 times = evarrays[chan]['times']
-
+                labels = evarrays[chan]['labels']
             ea = EventArray(
                 times*pq.s,
-                labels=evarrays[chan]['labels'],
+                labels=labels,
                 channel_name=eventHeaders[chan]['Name'],
                 channel_index=chan
             )
 >>>>>>> e5904f39606b2e50ca1e19cfb2a0ece2c5128ff4
             if lazy:
-                ea.lazy_shape = nb_events[chan]['times']
+                ea.lazy_shape = nb_events[chan]
             seg.eventarrays.append(ea)
 
             
