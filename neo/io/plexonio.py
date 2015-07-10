@@ -166,11 +166,7 @@ class PlexonIO(BaseIO):
             elif dataBlockHeader['Type'] ==4:
                 #event
                 nb_events[chan] += 1
-<<<<<<< HEAD
                 fid.seek(n1*n2*2, 1)    #handle events have waveforms
-=======
-                fid.seek(n1*n2*2, 1)    #handle events have waveforms
->>>>>>> 0.4.0_dev_py3k
             elif dataBlockHeader['Type'] == 5:
                 #continuous signal
                 fid.seek(n2*2, 1)
