@@ -99,7 +99,7 @@ class PlexonIO(BaseIO):
         )
         seg.file_origin = os.path.basename(self.filename)
 
-        for key, val in globalHeader.iteritems():
+        for key, val in globalHeader.items():
             seg.annotate(**{key: val})
 
         if not cascade:
@@ -246,13 +246,6 @@ class PlexonIO(BaseIO):
                 times = []
                 labels = None
             else:
-<<<<<<< HEAD
-                times = evarrays[chan]
-            print(times)
-            ea = EventArray(times*pq.s,
-                                            channel_name= eventHeaders[chan]['Name'],
-                                            channel_index = chan)
-=======
                 times = evarrays[chan]['times']
                 labels = evarrays[chan]['labels']
             ea = EventArray(
@@ -261,7 +254,6 @@ class PlexonIO(BaseIO):
                 channel_name=eventHeaders[chan]['Name'],
                 channel_index=chan
             )
->>>>>>> e5904f39606b2e50ca1e19cfb2a0ece2c5128ff4
             if lazy:
                 ea.lazy_shape = nb_events[chan]
             seg.eventarrays.append(ea)
@@ -316,7 +308,7 @@ class PlexonIO(BaseIO):
             )
             sptr.annotate(unit_name = dspChannelHeaders[chan]['Name'])
             sptr.annotate(channel_index = chan)
-            for key, val in dspChannelHeaders[chan].iteritems():
+            for key, val in dspChannelHeaders[chan].items():
                 sptr.annotate(**{key: val})
 
             if lazy:
