@@ -205,6 +205,7 @@ class KwikIO(BaseIO):
                     times=eventTimes,
                     labels=eventValues,
                     name='eventTTL_node:100_chn:'+str(event_chn))
+                eventArray.annotations['channel_index'] = event_chn
                 seg.eventarrays.append(eventArray)
 
             # neo.tools.populate_RecordingChannel(blk)
