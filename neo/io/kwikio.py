@@ -140,17 +140,24 @@ class KwikIO(BaseIO):
     def read_block(self,
                    lazy=False,
                    cascade=True,
-                   channel_index=None
+                   channel_index=None,
+                   resetTStart=None,
                    ):
         """
         Arguments:
             Channel_index: can be int, iterable or None
                 to select one, many or all channel(s)
+            resetTStart :  BOOL or None
+                reset start time to 0s
         """
 
         blk = Block()
         blk.annotations['samplingRate'] = self._attrs['samplingRate']
-        blk.annotations['start_time'] = self._attrs['start_time']
+        blk.annotations['start_time_orig'] = self._attrs['start_time']
+        if ((resetTStart is None) or (not resetTStart)):
+            blk.annotations['start_time'] = self._attrs['start_time']
+        else:
+            blk.annotations['start_time'] = 0 * pq.s
         blk.annotations['bit_depth'] = self._attrs['bit_depth']
         if cascade:
             seg = Segment(file_origin=self._filename)
@@ -170,6 +177,7 @@ class KwikIO(BaseIO):
                 ana = self.read_analogsignal(channel_index=idx,
                                              lazy=lazy,
                                              cascade=cascade,
+                                             resetTStart=resetTStart,
                                              )
                 chan = RecordingChannel(index=int(idx))
                 seg.analogsignals += [ana]
@@ -201,6 +209,9 @@ class KwikIO(BaseIO):
                     np.asarray(l_eventTime) /
                     self._attrs['samplingRate'].magnitude) * pq.s
                 eventValues = np.asarray(l_eventValue)
+                # reset start time to 0s
+                if (resetTStart):
+                    eventTimes = eventTimes - self._attrs['start_time']
                 eventArray = EventArray(
                     times=eventTimes,
                     labels=eventValues,
@@ -216,11 +227,14 @@ class KwikIO(BaseIO):
                           channel_index=None,
                           lazy=False,
                           cascade=True,
+                          resetTStart=None,
                           ):
         """
         Read raw traces
         Arguments:
             channel_index: must be integer
+        resetTStart :  BOOL or None
+                reset start time to 0s
         """
         try:
             channel_index = int(channel_index)
@@ -234,12 +248,16 @@ class KwikIO(BaseIO):
             bit_volts = np.ones((self._attrs['shape'][1]))
             # TODO: find conversion in phy generated files
             sig_unit = 'bit'
+        if (resetTStart):
+            tStart = 0 * pq.s
+        else:
+            tStart = self._attrs['start_time']
         if lazy:
             anasig = AnalogSignal(
                 [],
                 units=sig_unit,
                 sampling_rate=self._attrs['samplingRate'],
-                t_start=self._attrs['start_time'],
+                t_start=tStart,
                 channel_index=channel_index,
                 )
             # we add the attribute lazy_shape with the size if loaded
@@ -253,7 +271,7 @@ class KwikIO(BaseIO):
                 data,
                 units=sig_unit,
                 sampling_rate=self._attrs['samplingRate'],
-                t_start=self._attrs['start_time'],
+                t_start=tStart,
                 channel_index=channel_index,
                 )
             data = []  # delete from memory
