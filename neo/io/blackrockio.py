@@ -109,7 +109,7 @@ class BlackrockIO(BaseIO):
                 rcg0.recordingchannels.append(rc)
                 rc.recordingchannelgroups.append(rcg0)
             if len(rc.recordingchannelgroups) == 1:
-                rcg = RecordingChannelGroup(name = 'Group {}'.format(chan))
+                rcg = RecordingChannelGroup(name = 'Group {0}'.format(chan))
                 rcg.recordingchannels.append(rc)
                 rc.recordingchannelgroups.append(rcg)
                 bl.recordingchannelgroups.append(rcg)
@@ -160,7 +160,7 @@ class BlackrockIO(BaseIO):
         return seg
 
     def read_nev(self, filename_nev, seg, lazy, cascade, load_waveforms = False):
-        # basic hedaer
+        # basic header
         dt = [('header_id','S8'),
                     ('ver_major','uint8'),
                     ('ver_minor','uint8'),
@@ -176,9 +176,9 @@ class BlackrockIO(BaseIO):
                     
                 ]
         nev_header = h = np.fromfile(filename_nev, count = 1, dtype = dt)[0]
-        version = '{}.{}'.format(h['ver_major'], h['ver_minor'])
-        assert h['header_id'].decode('ascii') == 'NEURALEV' or version == '2.1', 'Unsupported version {}'.format(version)
-        version = '{}.{}'.format(h['ver_major'], h['ver_minor'])
+        version = '{0}.{1}'.format(h['ver_major'], h['ver_minor'])
+        assert h['header_id'].decode('ascii') == 'NEURALEV' or version == '2.1', 'Unsupported version {0}'.format(version)
+        version = '{0}.{1}'.format(h['ver_major'], h['ver_minor'])
         seg.annotate(blackrock_version = version)
         seg.rec_datetime = get_window_datetime(nev_header['window_datetime'])
         sr = float(h['sampling_rate'])
@@ -201,8 +201,12 @@ class BlackrockIO(BaseIO):
         
         # channel label
         neuelbl_header = ext_header['NEUEVLBL']
-        channel_labels = dict(zip(neuelbl_header['channel_id'], neuelbl_header['channel_label']))
-        
+        # Sometimes when making the channel labels we have only one channel and so must address it differently.
+        try:
+            channel_labels = dict(zip(neuelbl_header['channel_id'], neuelbl_header['channel_label']))
+        except TypeError:
+            channel_labels = dict([(neuelbl_header['channel_id'], neuelbl_header['channel_label'])])
+
         # TODO ext_header['DIGLABEL'] is there only one label ???? because no id in that case
         # TODO ECOMMENT + CCOMMENT for annotations
         # TODO NEUEVFLT for annotations
@@ -211,7 +215,7 @@ class BlackrockIO(BaseIO):
         # read data packet and markers
         dt0 =  [('samplepos', 'uint32'),
                     ('id', 'uint16'), 
-                    ('value', 'S{}'.format(h['packet_size']-6)),
+                    ('value', 'S{0}'.format(h['packet_size']-6)),
             ]
         data = np.memmap( filename_nev, offset = h['header_size'], dtype = dt0)
         all_ids = np.unique(data['id'])
@@ -245,7 +249,7 @@ class BlackrockIO(BaseIO):
                     ('reason', 'uint8'), 
                     ('reserved0', 'uint8'), 
                     ('digital_port', 'uint16'), 
-                    ('reserved1', 'S{}'.format(h['packet_size']-10)),
+                    ('reserved1', 'S{0}'.format(h['packet_size']-10)),
                 ]
         data_trigger = data.view(dt_trig)[mask]
         # Digital Triggers (PaquetID 0)
@@ -256,7 +260,7 @@ class BlackrockIO(BaseIO):
         if version in ['2.1', '2.2' ]:
             for i in range(5):
                 is_analog = (data_trigger ['reason']&(2**(i+1)))>0
-                create_event_array_trig_or_analog(is_analog, 'Analog trigger {}'.format(i), labelmode = None)
+                create_event_array_trig_or_analog(is_analog, 'Analog trigger {0}'.format(i), labelmode = None)
         
         # Comments
         mask = (data['id']==0xFFF) 
@@ -265,7 +269,7 @@ class BlackrockIO(BaseIO):
                     ('charset', 'uint8'), 
                     ('reserved0', 'uint8'), 
                     ('color', 'uint32'), 
-                    ('comment', 'S{}'.format(h['packet_size']-12)),
+                    ('comment', 'S{0}'.format(h['packet_size']-12)),
                 ]
         data_comments = data.view(dt_comments)[mask]
         if data_comments.size>0:
@@ -315,8 +319,8 @@ class BlackrockIO(BaseIO):
                 elif cluster_id==255:
                     name =  'noise'
                 else:
-                    name = 'Cluster {}'.format(cluster_id)
-                name = 'Channel {} '.format(channel_id)+name
+                    name = 'Cluster {0}'.format(cluster_id)
+                name = 'Channel {0} '.format(channel_id)+name
                 
                 data_spike_chan_clus = data_spike_chan[data_spike_chan['cluster']==cluster_id]
                 n_spike = data_spike_chan_clus.size
@@ -356,7 +360,7 @@ class BlackrockIO(BaseIO):
                     ('nb_channel', 'uint32'),
                 ]
         nsx_header = h = np.fromfile(filename_nsx, count = 1, dtype = dt0)[0]
-        version = '{}.{}'.format(h['ver_major'], h['ver_minor'])
+        version = '{0}.{1}'.format(h['ver_major'], h['ver_minor'])
         seg.annotate(blackrock_version = version)
         seg.rec_datetime = get_window_datetime(nsx_header['window_datetime'])
         nb_channel = h['nb_channel']
@@ -365,7 +369,7 @@ class BlackrockIO(BaseIO):
         if not cascade:
             return
         
-        # extented header = channel information
+        # extended header = channel information
         dt1 = [('header_id','S2'),
                     ('channel_id', 'uint16'),
                     ('label', 'S16'),
@@ -386,7 +390,7 @@ class BlackrockIO(BaseIO):
         channels_header = ch= np.memmap(filename_nsx, shape = nb_channel,
                     offset = np.dtype(dt0).itemsize,   dtype = dt1)
         
-        #read data
+        # read data
         dt2 = [('header_id','uint8'),
                     ('n_start','uint32'),
                     ('nb_sample','uint32'),
@@ -397,20 +401,20 @@ class BlackrockIO(BaseIO):
         data = np.memmap(filename_nsx, dtype = 'int16', shape = (nb_sample, nb_channel),
                         offset = nsx_header['header_size'] +np.dtype(dt2).itemsize )
         
-        # create ne objects
+        # create new objects
         for i in range(nb_channel):
-            unit = str(channels_header['units'][i])
+            unit = channels_header['units'][i].decode()
             if lazy:
                 sig = [ ]
             else:
                 sig = data[:,i].astype(float)
-                # dig value to pysical value
+                # dig value to physical value
                 if ch['max_analog_val'][i] == -ch['min_analog_val'][i] and\
                      ch['max_digital_val'][i] == -ch['min_digital_val'][i]:
-                    #when symetric it is simple
+                    # when symmetric it is simple
                     sig *= float(ch['max_analog_val'][i])/float(ch['max_digital_val'][i])
                 else:
-                    #general case
+                    # general case
                     sig -= ch['min_digital_val'][i]
                     sig *= float(ch['max_analog_val'][i] - ch['min_analog_val'])/\
                                     float(ch['max_digital_val'][i] - ch['min_digital_val'])
@@ -434,7 +438,7 @@ def get_window_datetime(buf):
     """This transform a buffer of 16 bytes window datetime type
      n python datetime object
     """
-    buf = buffer(buf.copy())
+
     dt = [('year', 'uint16'), ('mouth', 'uint16'), ('weekday', 'uint16'),
                 ('day', 'uint16'), ('hour', 'uint16'), ('min', 'uint16'),
                 ('sec', 'uint16'), ('usec', 'uint16'),]

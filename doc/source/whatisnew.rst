@@ -2,11 +2,22 @@
 Release notes
 *************
 
+What's new in version 0.4.1?
+----------------------------
+
+  * relaxed confict-checking on merge, to restore compatibility with Neo 0.3. More rigourous
+    conflict checking can be enabled as an option.
+
 
 What's new in version 0.4.0?
 ----------------------------
 
   * added StimfitIO
+  * added KwikIO
+  * significant improvements to AxonIO, BlackrockIO, BrainwareSrcIO, NeuroshareIO, PlexonIO, Spike2IO, TdtIO,
+  * many test suite improvements
+  * Container base class
+
 
 What's new in version 0.3.3?
 ----------------------------

@@ -209,7 +209,6 @@ class AxonIO(BaseIO):
         elif version >= 2.:
             mode = header['protocol']['nOperationMode']
 
-        #~ print 'mode', mode
         if (mode == 1) or (mode == 2) or (mode == 5) or (mode == 3):
             # event-driven variable-length mode (mode 1)
             # event-driven fixed-length mode (mode 2 or 5)
@@ -255,15 +254,18 @@ class AxonIO(BaseIO):
 
                 if (fSynchTimeUnit != 0) and (mode == 1):
                     length /= fSynchTimeUnit
-                subdata = data[pos:pos+length]
+
+                if not lazy:
+                    subdata = data[pos:pos+length]
+                    subdata = subdata.reshape((subdata.size/nbchannel,
+                                               nbchannel)).astype('f')
+                    if dt == np.dtype('i2'):
+                        if version < 2.:
+                            reformat_integer_V1(subdata, nbchannel, header)
+                        elif version >= 2.:
+                            reformat_integer_V2(subdata, nbchannel, header)
+
                 pos += length
-                subdata = subdata.reshape((subdata.size/nbchannel,
-                                           nbchannel)).astype('f')
-                if dt == np.dtype('i2'):
-                    if version < 2.:
-                        reformat_integer_V1(subdata, nbchannel, header)
-                    elif version >= 2.:
-                        reformat_integer_V2(subdata, nbchannel, header)
 
                 if version < 2.:
                     chans = [chan_num for chan_num in
@@ -282,7 +284,10 @@ class AxonIO(BaseIO):
                         unit = lADCIi['ADCChUnits'].replace(b'\xb5', b'u').\
                             replace(b' ', b'').decode('utf-8')
                         num = header['listADCInfo'][i]['nADCNum']
-                    t_start = float(episodArray[j]['offset']) / sampling_rate
+                    if (fSynchTimeUnit == 0):
+                        t_start = float(episodArray[j]['offset']) / sampling_rate
+                    else:
+                        t_start = float(episodArray[j]['offset']) * fSynchTimeUnit *1e-6* pq.s
                     t_start = t_start.rescale('s')
                     try:
                         pq.Quantity(1, unit)
@@ -299,7 +304,7 @@ class AxonIO(BaseIO):
                                           name=str(name),
                                           channel_index=int(num))
                     if lazy:
-                        anaSig.lazy_shape = subdata.shape[0]
+                        anaSig.lazy_shape = length / nbchannel
                     seg.analogsignals.append(anaSig)
                 bl.segments.append(seg)
 
