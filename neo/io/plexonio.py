@@ -277,6 +277,9 @@ class PlexonIO(BaseIO):
                 channel_index = slowChannelHeaders[chan]['Channel'],
                 channel_name = slowChannelHeaders[chan]['Name'],
             )
+            gainInfo = dict()
+            gainInfo['gain'] = gain
+            anasig.annotations.update(gainInfo)
             if lazy:
                 anasig.lazy_shape = nb_samples[chan]
             seg.analogsignals.append(anasig)
@@ -306,6 +309,9 @@ class PlexonIO(BaseIO):
                 t_stop=t_stop*pq.s,
                 waveforms=waveforms
             )
+            gainInfo = dict()
+            gainInfo['gain'] = gain
+            sptr.annotations.update(gainInfo)
             sptr.annotate(unit_name = dspChannelHeaders[chan]['Name'])
             sptr.annotate(channel_index = chan)
             for key, val in dspChannelHeaders[chan].items():
